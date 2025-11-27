@@ -20,8 +20,36 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Connect to MongoDB
-connectDB();
+// Initialize DB connection on startup
+let dbConnected = false;
+connectDB().catch(err => {
+  console.error('Failed to connect to MongoDB:', err.message);
+  dbConnected = false;
+});
+
+// Middleware to check DB connection
+app.use((req, res, next) => {
+  // For health checks, skip DB requirement
+  if (req.path === '/' || req.path === '/api' || req.path === '/health' || req.path === '/api/health') {
+    return next();
+  }
+  
+  // For other routes, ensure DB connection
+  if (!dbConnected) {
+    connectDB().then(() => {
+      dbConnected = true;
+      next();
+    }).catch(err => {
+      return res.status(503).json({
+        success: false,
+        message: 'Database connection failed. Please try again later.',
+        error: err.message
+      });
+    });
+  } else {
+    next();
+  }
+});
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -59,6 +87,14 @@ app.post('/api/inventory', protect, createItem);
 app.get('/api/inventory/:id', protect, getItem);
 app.put('/api/inventory/:id', protect, updateItem);
 app.delete('/api/inventory/:id', protect, deleteItem);
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found'
+  });
+});
 
 // Error handling middleware
 app.use(errorHandler);
