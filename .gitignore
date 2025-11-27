@@ -1,0 +1,73 @@
+# Environment variables - SENSITIVE
+.env
+.env.local
+.env.development
+.env.development.local
+.env.production
+.env.production.local
+.env.test
+.env.test.local
+
+# Dependencies
+node_modules/
+package-lock.json
+npm-debug.log
+npm-error.log
+yarn.lock
+yarn-error.log
+
+# IDE and Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-workspace
+*.sublime-project
+
+# OS
+Thumbs.db
+
+# Logs
+logs/
+*.log
+lerna-debug.log*
+
+# Build outputs
+dist/
+build/
+.vercel/
+.next/
+
+# Cache
+.cache/
+.eslintcache
+
+# Testing
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+
+# Secrets and credentials
+*.pem
+*.key
+*.cert
+*.p12
+secrets/
+credentials/
+.aws/
+.ssh/
+
+# Private files
+private/
+config/secrets.js
+config/credentials.js
+
+# API keys and tokens
+*_key
+*_secret
+*.token
