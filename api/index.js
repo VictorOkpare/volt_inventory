@@ -23,9 +23,29 @@ app.use(express.urlencoded({ extended: true }));
 // Connect to MongoDB
 connectDB();
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.json({ status: 'OK', message: 'Inventory API is running' });
+});
+
+app.get('/api', (req, res) => {
+  res.json({ status: 'OK', message: 'Inventory API is running' });
+});
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Server is running' });
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Server is running' });
+});
+
 // Auth Routes
 app.post('/auth/register', register);
 app.post('/auth/login', login);
+app.post('/api/auth/register', register);
+app.post('/api/auth/login', login);
 
 // Inventory Routes (Protected)
 app.get('/inventory', protect, getItems);
@@ -34,15 +54,11 @@ app.get('/inventory/:id', protect, getItem);
 app.put('/inventory/:id', protect, updateItem);
 app.delete('/inventory/:id', protect, deleteItem);
 
-// Health check
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Server is running' });
-});
-
-// Root health check
-app.get('/', (req, res) => {
-  res.json({ status: 'OK', message: 'Inventory API is running' });
-});
+app.get('/api/inventory', protect, getItems);
+app.post('/api/inventory', protect, createItem);
+app.get('/api/inventory/:id', protect, getItem);
+app.put('/api/inventory/:id', protect, updateItem);
+app.delete('/api/inventory/:id', protect, deleteItem);
 
 // Error handling middleware
 app.use(errorHandler);
