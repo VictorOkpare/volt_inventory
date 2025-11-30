@@ -6,7 +6,7 @@ const connectDB = require('../config/database');
 
 // Controllers
 const { getItems, getItem, createItem, updateItem, deleteItem } = require('../controllers/inventoryController');
-const { register, login } = require('../controllers/authController');
+const { register, login, forgotPassword, resetPassword } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const errorHandler = require('../middleware/errorHandler');
 
@@ -72,8 +72,13 @@ app.get('/api/health', (req, res) => {
 // Auth Routes
 app.post('/auth/register', register);
 app.post('/auth/login', login);
+app.post('/auth/forgotpassword', forgotPassword);
+app.put('/auth/resetpassword/:resettoken', resetPassword);
+
 app.post('/api/auth/register', register);
 app.post('/api/auth/login', login);
+app.post('/api/auth/forgotpassword', forgotPassword);
+app.put('/api/auth/resetpassword/:resettoken', resetPassword);
 
 // Inventory Routes (Protected)
 app.get('/inventory', protect, getItems);

@@ -30,6 +30,10 @@ const inventorySchema = new mongoose.Schema(
       type: String,
       sparse: true, 
     },
+    imageUrl: {
+      type: String,
+      trim: true,
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

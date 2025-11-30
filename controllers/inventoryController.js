@@ -53,7 +53,7 @@ exports.getItem = async (req, res, next) => {
 // @desc    Create new inventory item
 exports.createItem = async (req, res, next) => {
   try {
-    const { productName, description, category, quantity, unitPrice, sku } = req.body;
+    const { productName, description, category, quantity, unitPrice, sku, imageUrl } = req.body;
 
     // Validate required fields
     if (!productName || !category || quantity === undefined || !unitPrice) {
@@ -70,6 +70,7 @@ exports.createItem = async (req, res, next) => {
       quantity,
       unitPrice,
       sku,
+      imageUrl,
       userId: req.user.id,
     });
 
@@ -105,7 +106,7 @@ exports.updateItem = async (req, res, next) => {
     }
 
     // Update fields
-    const { productName, description, category, quantity, unitPrice, sku } = req.body;
+    const { productName, description, category, quantity, unitPrice, sku, imageUrl } = req.body;
 
     if (productName !== undefined) item.productName = productName;
     if (description !== undefined) item.description = description;
@@ -113,6 +114,7 @@ exports.updateItem = async (req, res, next) => {
     if (quantity !== undefined) item.quantity = quantity;
     if (unitPrice !== undefined) item.unitPrice = unitPrice;
     if (sku !== undefined) item.sku = sku;
+    if (imageUrl !== undefined) item.imageUrl = imageUrl;
 
     await item.save();
 
