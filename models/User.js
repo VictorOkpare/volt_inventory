@@ -25,6 +25,10 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
       select: false, // Don't include password in queries by default
     },
+    defaultCurrency: {
+      type: String,
+      default: 'USD - US Dollar',
+    },
     resetPasswordToken: String,
     resetPasswordExpire: Date,
   },

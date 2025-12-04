@@ -50,6 +50,7 @@ exports.register = async (req, res, next) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        defaultCurrency: user.defaultCurrency,
       },
     });
   } catch (error) {
@@ -101,6 +102,7 @@ exports.login = async (req, res, next) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        defaultCurrency: user.defaultCurrency,
       },
     });
   } catch (error) {
@@ -120,6 +122,7 @@ exports.getMe = async (req, res, next) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        defaultCurrency: user.defaultCurrency,
       },
     });
   } catch (error) {
@@ -231,6 +234,56 @@ exports.resetPassword = async (req, res, next) => {
         id: user._id,
         name: user.name,
         email: user.email,
+        defaultCurrency: user.defaultCurrency,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @route   GET /api/auth/settings
+// @access  Private
+exports.getSettings = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+
+    res.status(200).json({
+      success: true,
+      settings: {
+        defaultCurrency: user.defaultCurrency,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @route   PUT /api/auth/settings
+// @access  Private
+exports.updateSettings = async (req, res, next) => {
+  try {
+    const { defaultCurrency } = req.body;
+
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (defaultCurrency !== undefined) {
+      user.defaultCurrency = defaultCurrency;
+    }
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      settings: {
+        defaultCurrency: user.defaultCurrency,
       },
     });
   } catch (error) {
