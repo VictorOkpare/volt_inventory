@@ -1,5 +1,22 @@
 const Inventory = require('../models/Inventory');
 
+// @route   GET /api/inventory/categories
+// @access  Private
+// @desc    Get all available categories
+exports.getCategories = async (req, res, next) => {
+  try {
+    // Get categories from the schema enum
+    const categories = Inventory.schema.path('category').enumValues;
+
+    res.status(200).json({
+      success: true,
+      categories,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @route   GET /api/inventory
 // @access  Private
 // @desc    Get all inventory items for logged-in user
