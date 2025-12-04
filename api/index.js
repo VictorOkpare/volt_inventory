@@ -5,7 +5,7 @@ const cors = require('cors');
 const connectDB = require('../config/database');
 
 // Controllers
-const { getItems, getItem, createItem, updateItem, deleteItem } = require('../controllers/inventoryController');
+const { getItems, getItem, createItem, updateItem, deleteItem, getCategories, updateCategories } = require('../controllers/inventoryController');
 const { register, login, forgotPassword, resetPassword } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const errorHandler = require('../middleware/errorHandler');
@@ -81,12 +81,16 @@ app.post('/api/auth/forgotpassword', forgotPassword);
 app.put('/api/auth/resetpassword/:resettoken', resetPassword);
 
 // Inventory Routes (Protected)
+app.get('/inventory/categories', protect, getCategories);
+app.put('/inventory/categories', protect, updateCategories);
 app.get('/inventory', protect, getItems);
 app.post('/inventory', protect, createItem);
 app.get('/inventory/:id', protect, getItem);
 app.put('/inventory/:id', protect, updateItem);
 app.delete('/inventory/:id', protect, deleteItem);
 
+app.get('/api/inventory/categories', protect, getCategories);
+app.put('/api/inventory/categories', protect, updateCategories);
 app.get('/api/inventory', protect, getItems);
 app.post('/api/inventory', protect, createItem);
 app.get('/api/inventory/:id', protect, getItem);

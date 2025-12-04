@@ -17,6 +17,33 @@ exports.getCategories = async (req, res, next) => {
   }
 };
 
+// @route   PUT /api/inventory/categories
+// @access  Private
+// @desc    Update categories enum
+exports.updateCategories = async (req, res, next) => {
+  try {
+    const { categories } = req.body;
+
+    if (!categories || !Array.isArray(categories)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Categories must be an array',
+      });
+    }
+
+    // Update the schema enum values
+    Inventory.schema.path('category').enumValues = categories;
+
+    res.status(200).json({
+      success: true,
+      message: 'Categories updated successfully',
+      categories,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // @route   GET /api/inventory
 // @access  Private
 // @desc    Get all inventory items for logged-in user

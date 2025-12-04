@@ -1,5 +1,5 @@
 const express = require('express');
-const { getItems, getItem, createItem, updateItem, deleteItem, getCategories } = require('../controllers/inventoryController');
+const { getItems, getItem, createItem, updateItem, deleteItem, getCategories, updateCategories } = require('../controllers/inventoryController');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -8,6 +8,7 @@ const router = express.Router();
 router.use(protect);
 
 router.get('/categories', getCategories);
+router.put('/categories', updateCategories);
 router.get('/', getItems);
 router.post('/', createItem);
 router.get('/:id', getItem);
