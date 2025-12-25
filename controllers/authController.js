@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
 const Store = require('../models/Store');
+const Company = require('../models/Company');
 const sendEmail = require('../utils/sendEmail');
 
 // Generate JWT Token with role and storeId
@@ -11,6 +12,7 @@ const generateToken = (user) => {
       id: user._id,
       email: user.email,
       role: user.role,
+      companyId: user.companyId.toString(),
       storeId: user.storeId.toString(),
       isMainAdmin: user.role === 'MAIN_ADMIN',
     },
@@ -22,25 +24,16 @@ const generateToken = (user) => {
 };
 
 // @route   POST /api/auth/register
-// @access  Public (first main admin only)
+// @access  Public (first main admin for each company)
 exports.register = async (req, res, next) => {
   try {
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, email, password, companyName } = req.body;
 
     // Validate inputs
-    if (!firstName || !lastName || !email || !password) {
+    if (!firstName || !lastName || !email || !password || !companyName) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide firstName, lastName, email and password',
-      });
-    }
-
-    // Check if main admin already exists
-    const mainAdminExists = await User.findOne({ role: 'MAIN_ADMIN' });
-    if (mainAdminExists) {
-      return res.status(400).json({
-        success: false,
-        message: 'Main admin already exists. Only one main admin allowed.',
+        message: 'Please provide firstName, lastName, email, password, and companyName',
       });
     }
 
@@ -49,20 +42,35 @@ exports.register = async (req, res, next) => {
     if (user) {
       return res.status(400).json({
         success: false,
-        message: 'User already exists',
+        message: 'User with this email already exists',
       });
     }
 
-    // Create or get main store
-    let mainStore = await Store.findOne({ storeType: 'MAIN' });
-    if (!mainStore) {
-      mainStore = await Store.create({
-        storeId: 'MS-001',
-        storeName: 'Main Store',
-        storeType: 'MAIN',
-        status: 'ACTIVE',
+    // Check if company already exists
+    let company = await Company.findOne({ companyName });
+    if (company) {
+      return res.status(400).json({
+        success: false,
+        message: 'Company with this name already exists',
       });
     }
+
+    // Create company
+    company = await Company.create({
+      companyName,
+      companyCode: companyName.substring(0, 3).toUpperCase() + Date.now().toString().slice(-4),
+      email,
+      status: 'ACTIVE',
+    });
+
+    // Create main store for company
+    const mainStore = await Store.create({
+      companyId: company._id,
+      storeId: 'MS-001',
+      storeName: `${companyName} - Main Store`,
+      storeType: 'MAIN',
+      status: 'ACTIVE',
+    });
 
     // Create main admin user
     user = await User.create({
@@ -70,12 +78,17 @@ exports.register = async (req, res, next) => {
       lastName,
       email,
       password,
+      companyId: company._id,
       role: 'MAIN_ADMIN',
       storeId: mainStore._id,
       status: 'ACTIVE',
       isFirstLogin: false,
       passwordSetAt: new Date(),
     });
+
+    // Update company with main admin reference
+    company.mainAdminId = user._id;
+    await company.save();
 
     // Create token
     const token = generateToken(user);
@@ -89,6 +102,8 @@ exports.register = async (req, res, next) => {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        companyId: company._id,
+        companyName: company.companyName,
         storeId: user.storeId,
       },
     });
@@ -112,7 +127,10 @@ exports.login = async (req, res, next) => {
     }
 
     
-    const user = await User.findOne({ email }).select('+password').populate('storeId');
+    const user = await User.findOne({ email })
+      .select('+password')
+      .populate('storeId')
+      .populate('companyId');
 
     if (!user) {
       return res.status(401).json({
@@ -152,6 +170,8 @@ exports.login = async (req, res, next) => {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        companyId: user.companyId._id,
+        companyName: user.companyId.companyName,
         storeId: user.storeId._id,
         storeName: user.storeId.storeName,
         isFirstLogin: user.isFirstLogin,

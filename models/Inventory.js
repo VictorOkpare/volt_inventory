@@ -2,6 +2,16 @@ const mongoose = require('mongoose');
 
 const inventorySchema = new mongoose.Schema(
   {
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      required: [true, 'Please assign inventory to a company'],
+    },
+    storeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Store',
+      required: [true, 'Please assign store to inventory item'],
+    },
     productName: {
       type: String,
       required: [true, 'Please provide a product name'],
@@ -50,11 +60,6 @@ const inventorySchema = new mongoose.Schema(
     imageUrl: {
       type: String,
       trim: true,
-    },
-    storeId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Store',
-      required: [true, 'Please assign store to inventory item'],
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,

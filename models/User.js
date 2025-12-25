@@ -30,6 +30,11 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
       select: false, // Don't include password in queries by default
     },
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      required: [true, 'Please assign user to a company'],
+    },
     role: {
       type: String,
       enum: ['MAIN_ADMIN', 'SUBSTORE_ADMIN'],

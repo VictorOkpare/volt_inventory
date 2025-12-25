@@ -2,13 +2,17 @@ const mongoose = require('mongoose');
 
 const storeSchema = new mongoose.Schema(
   {
+    companyId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Company',
+      required: [true, 'Please assign store to a company'],
+    },
     storeId: {
       type: String,
       required: [true, 'Please provide a store ID'],
-      unique: true,
       uppercase: true,
       trim: true,
-      // Format: MS-001 for main, SS-001 for substores
+      // Format: MS-001 for main, SS-001 for substores (unique per company)
     },
     storeName: {
       type: String,
@@ -68,15 +72,19 @@ const storeSchema = new mongoose.Schema(
   }
 );
 
-// Ensure only one MAIN store exists
+// Ensure only one MAIN store exists per company
 storeSchema.pre('save', async function (next) {
   if (this.storeType === 'MAIN') {
     const existingMain = await mongoose
       .model('Store')
-      .findOne({ storeType: 'MAIN', _id: { $ne: this._id } });
+      .findOne({ 
+        storeType: 'MAIN', 
+        companyId: this.companyId,
+        _id: { $ne: this._id } 
+      });
 
     if (existingMain) {
-      throw new Error('Only one MAIN store can exist in the system');
+      throw new Error('Only one MAIN store can exist per company');
     }
   }
   next();
