@@ -6,8 +6,15 @@ const connectDB = require('../config/database');
 
 // Controllers
 const { getItems, getItem, createItem, updateItem, deleteItem, getCategories, updateCategories } = require('../controllers/inventoryController');
-const { register, login, forgotPassword, resetPassword, getSettings, updateSettings } = require('../controllers/authController');
+const { register, login, forgotPassword, resetPassword, getSettings, updateSettings, getMe, logout } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
+
+// Route imports
+const authRoutes = require('../routes/auth');
+const storeRoutes = require('../routes/stores');
+const userRoutes = require('../routes/users');
+const inventoryRoutes = require('../routes/inventory');
+
 const errorHandler = require('../middleware/errorHandler');
 
 const app = express();
@@ -72,17 +79,28 @@ app.get('/api/health', (req, res) => {
 // Auth Routes
 app.post('/auth/register', register);
 app.post('/auth/login', login);
+app.get('/auth/me', protect, getMe);
+app.post('/auth/logout', protect, logout);
 app.post('/auth/forgotpassword', forgotPassword);
 app.put('/auth/resetpassword/:resettoken', resetPassword);
 app.get('/auth/settings', protect, getSettings);
 app.put('/auth/settings', protect, updateSettings);
 
+// API Auth Routes
 app.post('/api/auth/register', register);
 app.post('/api/auth/login', login);
+app.get('/api/auth/me', protect, getMe);
+app.post('/api/auth/logout', protect, logout);
 app.post('/api/auth/forgotpassword', forgotPassword);
 app.put('/api/auth/resetpassword/:resettoken', resetPassword);
 app.get('/api/auth/settings', protect, getSettings);
 app.put('/api/auth/settings', protect, updateSettings);
+
+// Store Routes
+app.use('/api/stores', storeRoutes);
+
+// User Routes
+app.use('/api/users', userRoutes);
 
 // Inventory Routes (Protected)
 app.get('/inventory/categories', protect, getCategories);

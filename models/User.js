@@ -4,9 +4,14 @@ const crypto = require('crypto');
 
 const userSchema = new mongoose.Schema(
   {
-    name: {
+    firstName: {
       type: String,
-      required: [true, 'Please provide a name'],
+      required: [true, 'Please provide first name'],
+      trim: true,
+    },
+    lastName: {
+      type: String,
+      required: [true, 'Please provide last name'],
       trim: true,
     },
     email: {
@@ -25,10 +30,40 @@ const userSchema = new mongoose.Schema(
       minlength: 6,
       select: false, // Don't include password in queries by default
     },
+    role: {
+      type: String,
+      enum: ['MAIN_ADMIN', 'SUBSTORE_ADMIN'],
+      required: [true, 'Please specify user role'],
+      default: 'SUBSTORE_ADMIN',
+    },
+    storeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Store',
+      required: [true, 'Please assign a store to user'],
+    },
+    isFirstLogin: {
+      type: Boolean,
+      default: true,
+      // For password initialization flow
+    },
+    status: {
+      type: String,
+      enum: ['ACTIVE', 'INACTIVE', 'PENDING'],
+      default: 'PENDING',
+      // PENDING: User created but password not yet set
+      // ACTIVE: User can login and access
+      // INACTIVE: User account disabled
+    },
     defaultCurrency: {
       type: String,
       default: 'USD - US Dollar',
     },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      // Track which admin created this user
+    },
+    passwordSetAt: Date,
     resetPasswordToken: String,
     resetPasswordExpire: Date,
   },

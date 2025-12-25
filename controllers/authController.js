@@ -1,26 +1,46 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const User = require('../models/User');
+const Store = require('../models/Store');
 const sendEmail = require('../utils/sendEmail');
 
-// Generate JWT Token
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET, {
-    expiresIn: process.env.JWT_EXPIRE,
-  });
+// Generate JWT Token with role and storeId
+const generateToken = (user) => {
+  return jwt.sign(
+    {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+      storeId: user.storeId.toString(),
+      isMainAdmin: user.role === 'MAIN_ADMIN',
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: process.env.JWT_EXPIRE,
+    }
+  );
 };
 
 // @route   POST /api/auth/register
-// @access  Public
+// @access  Public (first main admin only)
 exports.register = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { firstName, lastName, email, password } = req.body;
 
     // Validate inputs
-    if (!name || !email || !password) {
+    if (!firstName || !lastName || !email || !password) {
       return res.status(400).json({
         success: false,
-        message: 'Please provide name, email and password',
+        message: 'Please provide firstName, lastName, email and password',
+      });
+    }
+
+    // Check if main admin already exists
+    const mainAdminExists = await User.findOne({ role: 'MAIN_ADMIN' });
+    if (mainAdminExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'Main admin already exists. Only one main admin allowed.',
       });
     }
 
@@ -33,24 +53,43 @@ exports.register = async (req, res, next) => {
       });
     }
 
-    // Create user
+    // Create or get main store
+    let mainStore = await Store.findOne({ storeType: 'MAIN' });
+    if (!mainStore) {
+      mainStore = await Store.create({
+        storeId: 'MS-001',
+        storeName: 'Main Store',
+        storeType: 'MAIN',
+        status: 'ACTIVE',
+      });
+    }
+
+    // Create main admin user
     user = await User.create({
-      name,
+      firstName,
+      lastName,
       email,
       password,
+      role: 'MAIN_ADMIN',
+      storeId: mainStore._id,
+      status: 'ACTIVE',
+      isFirstLogin: false,
+      passwordSetAt: new Date(),
     });
 
     // Create token
-    const token = generateToken(user._id);
+    const token = generateToken(user);
 
     res.status(201).json({
       success: true,
       token,
       user: {
         id: user._id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
-        defaultCurrency: user.defaultCurrency,
+        role: user.role,
+        storeId: user.storeId,
       },
     });
   } catch (error) {
@@ -72,13 +111,22 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    // Check for user
-    const user = await User.findOne({ email }).select('+password');
+    
+    const user = await User.findOne({ email }).select('+password').populate('storeId');
 
     if (!user) {
       return res.status(401).json({
         success: false,
         message: 'Invalid credentials',
+      });
+    }
+
+    // Check user status
+    const userStatus = user.status || 'ACTIVE';
+    if (userStatus !== 'ACTIVE') {
+      return res.status(401).json({
+        success: false,
+        message: 'User account is not active',
       });
     }
 
@@ -93,15 +141,20 @@ exports.login = async (req, res, next) => {
     }
 
     // Create token
-    const token = generateToken(user._id);
+    const token = generateToken(user);
 
     res.status(200).json({
       success: true,
       token,
       user: {
         id: user._id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
+        role: user.role,
+        storeId: user.storeId._id,
+        storeName: user.storeId.storeName,
+        isFirstLogin: user.isFirstLogin,
         defaultCurrency: user.defaultCurrency,
       },
     });
@@ -114,14 +167,18 @@ exports.login = async (req, res, next) => {
 // @access  Private
 exports.getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).populate('storeId');
 
     res.status(200).json({
       success: true,
       user: {
         id: user._id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
+        role: user.role,
+        storeId: user.storeId._id,
+        storeName: user.storeId.storeName,
         defaultCurrency: user.defaultCurrency,
       },
     });
@@ -221,19 +278,26 @@ exports.resetPassword = async (req, res, next) => {
     user.password = req.body.password;
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
+    user.passwordSetAt = new Date();
+    if (user.isFirstLogin) {
+      user.isFirstLogin = false;
+      user.status = 'ACTIVE';
+    }
 
     await user.save();
 
     // Create token
-    const token = generateToken(user._id);
+    const token = generateToken(user);
 
     res.status(200).json({
       success: true,
       token,
       user: {
         id: user._id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
+        role: user.role,
         defaultCurrency: user.defaultCurrency,
       },
     });

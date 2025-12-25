@@ -51,6 +51,11 @@ const inventorySchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    storeId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Store',
+      required: [true, 'Please assign store to inventory item'],
+    },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
