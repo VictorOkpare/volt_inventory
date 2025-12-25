@@ -29,32 +29,52 @@ app.use(express.urlencoded({ extended: true }));
 
 // Initialize DB connection on startup
 let dbConnected = false;
-connectDB().catch(err => {
-  console.error('Failed to connect to MongoDB:', err.message);
-  dbConnected = false;
+let dbConnectionPromise = null;
+
+const ensureDBConnection = async () => {
+  if (dbConnected) {
+    return;
+  }
+  
+  if (dbConnectionPromise) {
+    return dbConnectionPromise;
+  }
+  
+  dbConnectionPromise = connectDB()
+    .then(() => {
+      dbConnected = true;
+      dbConnectionPromise = null;
+    })
+    .catch(err => {
+      console.error('Failed to connect to MongoDB:', err.message);
+      dbConnectionPromise = null;
+      throw err;
+    });
+  
+  return dbConnectionPromise;
+};
+
+// Initialize DB connection on startup
+ensureDBConnection().catch(err => {
+  console.error('Initial MongoDB connection failed:', err.message);
 });
 
 // Middleware to check DB connection
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   // For health checks, skip DB requirement
   if (req.path === '/' || req.path === '/api' || req.path === '/health' || req.path === '/api/health') {
     return next();
   }
   
-  // For other routes, ensure DB connection
-  if (!dbConnected) {
-    connectDB().then(() => {
-      dbConnected = true;
-      next();
-    }).catch(err => {
-      return res.status(503).json({
-        success: false,
-        message: 'Database connection failed. Please try again later.',
-        error: err.message
-      });
-    });
-  } else {
+  try {
+    await ensureDBConnection();
     next();
+  } catch (err) {
+    return res.status(503).json({
+      success: false,
+      message: 'Database connection failed. Please try again later.',
+      error: err.message
+    });
   }
 });
 

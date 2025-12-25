@@ -38,7 +38,7 @@ exports.register = async (req, res, next) => {
     }
 
     // Check if user already exists
-    let user = await User.findOne({ email });
+    let user = await User.findOne({ email: email.toLowerCase() }).timeout(8000);
     if (user) {
       return res.status(400).json({
         success: false,
@@ -47,7 +47,7 @@ exports.register = async (req, res, next) => {
     }
 
     // Check if company already exists
-    let company = await Company.findOne({ companyName });
+    let company = await Company.findOne({ companyName }).timeout(8000);
     if (company) {
       return res.status(400).json({
         success: false,
@@ -76,7 +76,7 @@ exports.register = async (req, res, next) => {
     user = await User.create({
       firstName,
       lastName,
-      email,
+      email: email.toLowerCase(),
       password,
       companyId: company._id,
       role: 'MAIN_ADMIN',
@@ -127,10 +127,11 @@ exports.login = async (req, res, next) => {
     }
 
     
-    const user = await User.findOne({ email })
+    const user = await User.findOne({ email: email.toLowerCase() })
       .select('+password')
       .populate('storeId')
-      .populate('companyId');
+      .populate('companyId')
+      .timeout(8000);
 
     if (!user) {
       return res.status(401).json({
@@ -224,7 +225,17 @@ exports.logout = async (req, res, next) => {
 // @access  Public
 exports.forgotPassword = async (req, res, next) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide an email address',
+      });
+    }
+
+    // Set a timeout for the database query
+    const user = await User.findOne({ email: email.toLowerCase() }).timeout(8000);
 
     if (!user) {
       return res.status(404).json({
@@ -256,7 +267,7 @@ exports.forgotPassword = async (req, res, next) => {
         data: 'Email sent',
       });
     } catch (err) {
-      console.log(err);
+      console.error('Email sending failed:', err);
       user.resetPasswordToken = undefined;
       user.resetPasswordExpire = undefined;
 
@@ -268,6 +279,7 @@ exports.forgotPassword = async (req, res, next) => {
       });
     }
   } catch (error) {
+    console.error('Forgot password error:', error.message);
     next(error);
   }
 };
