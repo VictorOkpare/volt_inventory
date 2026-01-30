@@ -391,7 +391,7 @@ exports.getSettings = async (req, res, next) => {
 // @access  Private
 exports.updateSettings = async (req, res, next) => {
   try {
-    const { defaultCurrency } = req.body;
+    const { firstName, lastName, defaultCurrency, imageUrl } = req.body;
 
     const user = await User.findById(req.user.id);
 
@@ -402,17 +402,30 @@ exports.updateSettings = async (req, res, next) => {
       });
     }
 
+    // Update allowed fields (but NOT email)
+    if (firstName !== undefined) {
+      user.firstName = firstName;
+    }
+    if (lastName !== undefined) {
+      user.lastName = lastName;
+    }
     if (defaultCurrency !== undefined) {
       user.defaultCurrency = defaultCurrency;
+    }
+    if (imageUrl !== undefined) {
+      user.imageUrl = imageUrl;
     }
 
     await user.save();
 
+    // Return updated user data
+    const updatedUser = await User.findById(req.user.id)
+      .select('-password')
+      .populate('storeId', 'storeId storeName address city state country contact');
+
     res.status(200).json({
       success: true,
-      settings: {
-        defaultCurrency: user.defaultCurrency,
-      },
+      data: updatedUser,
     });
   } catch (error) {
     next(error);
