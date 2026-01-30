@@ -63,6 +63,11 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: 'USD - US Dollar',
     },
+    imageUrl: {
+      type: String,
+      default: null,
+      // URL to user's profile image
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

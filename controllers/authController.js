@@ -37,8 +37,25 @@ exports.register = async (req, res, next) => {
       });
     }
 
+    // Validate email format
+    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please provide a valid email address',
+      });
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters long',
+      });
+    }
+
     // Check if user already exists
-    let user = await User.findOne({ email: email.toLowerCase() }).timeout(8000);
+    let user = await User.findOne({ email: email.toLowerCase() });
     if (user) {
       return res.status(400).json({
         success: false,
@@ -47,7 +64,7 @@ exports.register = async (req, res, next) => {
     }
 
     // Check if company already exists
-    let company = await Company.findOne({ companyName }).timeout(8000);
+    let company = await Company.findOne({ companyName });
     if (company) {
       return res.status(400).json({
         success: false,
@@ -59,7 +76,7 @@ exports.register = async (req, res, next) => {
     company = await Company.create({
       companyName,
       companyCode: companyName.substring(0, 3).toUpperCase() + Date.now().toString().slice(-4),
-      email,
+      email: email.toLowerCase(),
       status: 'ACTIVE',
     });
 
@@ -102,6 +119,7 @@ exports.register = async (req, res, next) => {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        imageUrl: user.imageUrl,
         companyId: company._id,
         companyName: company.companyName,
         storeId: user.storeId,
@@ -130,8 +148,7 @@ exports.login = async (req, res, next) => {
     const user = await User.findOne({ email: email.toLowerCase() })
       .select('+password')
       .populate('storeId')
-      .populate('companyId')
-      .timeout(8000);
+      .populate('companyId');
 
     if (!user) {
       return res.status(401).json({
@@ -171,6 +188,7 @@ exports.login = async (req, res, next) => {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
+        imageUrl: user.imageUrl,
         companyId: user.companyId._id,
         companyName: user.companyId.companyName,
         storeId: user.storeId._id,
@@ -188,7 +206,7 @@ exports.login = async (req, res, next) => {
 // @access  Private
 exports.getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id).populate('storeId');
+    const user = await User.findById(req.user.id).populate('storeId').populate('companyId');
 
     res.status(200).json({
       success: true,
@@ -198,9 +216,23 @@ exports.getMe = async (req, res, next) => {
         lastName: user.lastName,
         email: user.email,
         role: user.role,
-        storeId: user.storeId._id,
-        storeName: user.storeId.storeName,
+        imageUrl: user.imageUrl,
+        companyId: user.companyId ? {
+          _id: user.companyId._id,
+          companyName: user.companyId.companyName,
+        } : null,
+        storeId: user.storeId ? {
+          _id: user.storeId._id,
+          storeId: user.storeId.storeId,
+          storeName: user.storeId.storeName,
+          address: user.storeId.address,
+          city: user.storeId.city,
+          state: user.storeId.state,
+          country: user.storeId.country,
+          contact: user.storeId.contact,
+        } : null,
         defaultCurrency: user.defaultCurrency,
+        status: user.status,
       },
     });
   } catch (error) {
@@ -234,8 +266,8 @@ exports.forgotPassword = async (req, res, next) => {
       });
     }
 
-    // Set a timeout for the database query
-    const user = await User.findOne({ email: email.toLowerCase() }).timeout(8000);
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase() });
 
     if (!user) {
       return res.status(404).json({

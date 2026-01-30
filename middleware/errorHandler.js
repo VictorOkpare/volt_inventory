@@ -3,7 +3,7 @@ const errorHandler = (err, req, res, next) => {
   error.message = err.message;
 
   // Log to console for dev
-  console.error(err);
+  console.error('ERROR:', err);
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
@@ -13,7 +13,9 @@ const errorHandler = (err, req, res, next) => {
 
   // Mongoose duplicate key
   if (err.code === 11000) {
-    const message = `Duplicate field value entered`;
+    const field = Object.keys(err.keyValue)[0];
+    const value = err.keyValue[field];
+    const message = `${field} "${value}" is already in use`;
     error = { message, statusCode: 400 };
   }
 
