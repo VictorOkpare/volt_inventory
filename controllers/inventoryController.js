@@ -109,6 +109,14 @@ exports.createItem = async (req, res, next) => {
 
     const mongoose = require('mongoose');
     
+    // Validate ObjectIds from JWT token
+    if (!req.user.id || !req.user.companyId || !req.user.storeId) {
+      return res.status(400).json({
+        success: false,
+        message: 'User information is incomplete',
+      });
+    }
+
     const item = await Inventory.create({
       productName,
       description,
@@ -117,9 +125,9 @@ exports.createItem = async (req, res, next) => {
       unitPrice,
       sku,
       imageUrl,
-      userId: new mongoose.Types.ObjectId(req.user.id),
-      companyId: new mongoose.Types.ObjectId(req.user.companyId),
-      storeId: new mongoose.Types.ObjectId(req.user.storeId),
+      userId: req.user.id,
+      companyId: req.user.companyId,
+      storeId: req.user.storeId,
     });
 
     res.status(201).json({
