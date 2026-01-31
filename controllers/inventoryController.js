@@ -116,6 +116,8 @@ exports.createItem = async (req, res, next) => {
       sku,
       imageUrl,
       userId: req.user.id,
+      companyId: req.user.companyId,
+      storeId: req.user.storeId,
     });
 
     res.status(201).json({
