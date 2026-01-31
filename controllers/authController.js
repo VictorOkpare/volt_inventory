@@ -146,9 +146,7 @@ exports.login = async (req, res, next) => {
 
     
     const user = await User.findOne({ email: email.toLowerCase() })
-      .select('+password')
-      .populate('storeId')
-      .populate('companyId');
+      .select('+password');
 
     if (!user) {
       return res.status(401).json({
@@ -179,22 +177,27 @@ exports.login = async (req, res, next) => {
     // Create token
     const token = generateToken(user);
 
+    // Populate for response only (after token generation)
+    const populatedUser = await User.findById(user._id)
+      .populate('storeId')
+      .populate('companyId');
+
     res.status(200).json({
       success: true,
       token,
       user: {
-        id: user._id,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        role: user.role,
-        imageUrl: user.imageUrl,
-        companyId: user.companyId._id,
-        companyName: user.companyId.companyName,
-        storeId: user.storeId._id,
-        storeName: user.storeId.storeName,
-        isFirstLogin: user.isFirstLogin,
-        defaultCurrency: user.defaultCurrency,
+        id: populatedUser._id,
+        firstName: populatedUser.firstName,
+        lastName: populatedUser.lastName,
+        email: populatedUser.email,
+        role: populatedUser.role,
+        imageUrl: populatedUser.imageUrl,
+        companyId: populatedUser.companyId._id,
+        companyName: populatedUser.companyId.companyName,
+        storeId: populatedUser.storeId._id,
+        storeName: populatedUser.storeId.storeName,
+        isFirstLogin: populatedUser.isFirstLogin,
+        defaultCurrency: populatedUser.defaultCurrency,
       },
     });
   } catch (error) {
