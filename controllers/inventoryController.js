@@ -107,6 +107,8 @@ exports.createItem = async (req, res, next) => {
       });
     }
 
+    const mongoose = require('mongoose');
+    
     const item = await Inventory.create({
       productName,
       description,
@@ -115,9 +117,9 @@ exports.createItem = async (req, res, next) => {
       unitPrice,
       sku,
       imageUrl,
-      userId: req.user.id,
-      companyId: req.user.companyId,
-      storeId: req.user.storeId,
+      userId: new mongoose.Types.ObjectId(req.user.id),
+      companyId: new mongoose.Types.ObjectId(req.user.companyId),
+      storeId: new mongoose.Types.ObjectId(req.user.storeId),
     });
 
     res.status(201).json({
