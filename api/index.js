@@ -54,10 +54,8 @@ const ensureDBConnection = async () => {
   return dbConnectionPromise;
 };
 
-// Initialize DB connection on startup
-ensureDBConnection().catch(err => {
-  console.error('Initial MongoDB connection failed:', err.message);
-});
+// Don't connect to DB on startup in serverless environment
+// Connection will be established on first request via middleware
 
 // Middleware to check DB connection
 app.use(async (req, res, next) => {
